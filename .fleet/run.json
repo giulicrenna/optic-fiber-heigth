@@ -1,0 +1,16 @@
+{
+    "configurations": [
+        {
+            "type": "python",
+            "name": "main",
+            "arguments": ["main.py"],
+        },
+        {
+            "type": "python",
+            "name": "client",
+            "arguments": ["client.py"],
+        },
+
+    ],
+
+}
