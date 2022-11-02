@@ -3,29 +3,35 @@ from time import sleep
 
 import cv2 as cv
 
-# get the hostname
 host = socket.gethostname()
-port = 8000  # initiate port no above 1024
+port = 8000 
 
-# get instance
 server_socket = socket.socket()
-# look closely. The bind() function takes tuple as argument
-server_socket.bind((host, port))  # bind host address and port together
-# configure how many client the server can listen simultaneously
+server_socket.bind((host, port))  
 server_socket.listen(2)
 
-
-def server_program(data):
+"""
+server_program: Str -> None
+This function start the TCP connection on localhost and
+send some data.
+"""
+def server_program(data) -> None:
     conn, address = server_socket.accept()  # accept new connection
     print("Connection from: " + str(address))
     conn.send(data.encode())  # send data to the client
     # conn.close()  # close the connection
 
 
+"""
+prom: (str, int), int, int, int -> None
+This function analyses the image from the source and checks
+witch optic fiber is activated.
+sensibility adjust how much the function is sensible to the red color.
+"""
 def prom(videoSource=0,
          factor_h=2,
          factor_w=4,
-         sensibility=.3):
+         sensibility=.3) -> None:
     video = cv.VideoCapture(videoSource)
     isTrue, image = video.read()
 
@@ -35,21 +41,33 @@ def prom(videoSource=0,
     print("height: " + str(height_portion * 2) +
           " width: " + str(width_portion * 4))
 
-    # height, width
-    # p7 is higher than p0
-    p0 = image[0:height_portion, 0:width_portion]
-    p1 = image[0:height_portion, width_portion:width_portion * 2]
-    p2 = image[0:height_portion, width_portion * 2:width_portion * 3]
-    p3 = image[0:height_portion, width_portion * 3:width_portion * 4]
-    p4 = image[height_portion:height_portion * 2, 0:width_portion]
-    p5 = image[height_portion:height_portion *
-               2, width_portion:width_portion * 2]
-    p6 = image[height_portion:height_portion *
-               2, width_portion * 2:width_portion * 3]
-    p7 = image[height_portion:height_portion *
-               2, width_portion * 3:width_portion * 4]
+    """
+    height, width
+    p7 is higher than p0
+    each p0:p1 is a portion of the image. (a crop)
+    """
+    p0 = image[0:height_portion, 
+            0:width_portion]
+    p1 = image[0:height_portion, 
+            width_portion:width_portion*2]
+    p2 = image[0:height_portion, 
+            width_portion*2:width_portion*3]
+    p3 = image[0:height_portion, 
+            width_portion*3:width_portion*4]
+    p4 = image[height_portion:height_portion*2, 
+            0:width_portion]
+    p5 = image[height_portion:height_portion*2, 
+            width_portion:width_portion*2]
+    p6 = image[height_portion:height_portion*2, 
+            width_portion*2:width_portion*3]
+    p7 = image[height_portion:height_portion*2, 
+            width_portion*3:width_portion*4]
 
-    count_p0 = 0  # counts pixels in each portion of image
+    """
+    Counts pixels in each portion of image,
+    these numbers are used to calculate the promedium of the red color.
+    """
+    count_p0 = 0  
     count_p1 = 0
     count_p2 = 0
     count_p3 = 0
@@ -57,7 +75,10 @@ def prom(videoSource=0,
     count_p5 = 0
     count_p6 = 0
     count_p7 = 0
-
+    
+    """
+    Where the promedium result will be stored.
+    """
     red_p0 = 0
     red_p1 = 0
     red_p2 = 0
@@ -75,12 +96,15 @@ def prom(videoSource=0,
     for portion in range(len(portions)):
         for row in portions[portion]:
             for pixel in row:
+                # If pixel is black avoid it.
                 if pixel[0] == 0 and pixel[1] == 0 and pixel[2] == 0:
                     pass
+                # Add one pixel and the sum the red value (rgb) from "pixel"
                 else:
                     counts[portion] += 1
                     reds[portion] += pixel[2]
 
+    # Calculates the promedium of each portion.
     for red in range(len(reds)):
         if counts[red] != 0:
             reds[red] = int(reds[red] / counts[red])
@@ -89,8 +113,11 @@ def prom(videoSource=0,
     inversed_reds = reds.copy()
     inversed_reds.reverse()
     # print(reds)
-
-    flag = 255 * sensibility
+    """
+    Adjust the sensibility if sensibility is equal to 1 the the red promedium has to be
+    255
+    """
+    flag = int(255 * sensibility)
 
     for red in range(len(inversed_reds)):
         if inversed_reds[red] > flag:
